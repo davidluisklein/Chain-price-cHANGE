@@ -153,11 +153,17 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
     """Main processing function implementing your exact Colab logic"""
     
     try:
-        # Read reference file
-        reference = pd.read_csv(reference_file, encoding='latin1')
+        # Read reference file with encoding fallback
+        try:
+            reference = pd.read_csv(reference_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            reference = pd.read_csv(reference_file, encoding='latin1')
         
-        # Read upload file  
-        upload = pd.read_csv(upload_file, encoding='latin1')
+        # Read upload file with encoding fallback
+        try:
+            upload = pd.read_csv(upload_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            upload = pd.read_csv(upload_file, encoding='latin1')
         
         # Process reference data (following your Colab logic)
         reference["Date Created"] = pd.to_datetime(reference["Date Created"], errors="coerce")
@@ -266,8 +272,13 @@ def main():
             "Upload your 'test for price updates.csv' file",
             type=['csv'],
             key="reference_file",
-            help="This is your reference data file with pricing information"
+            help="This is your reference data file with pricing information (Max 200MB)"
         )
+        
+        # Check file size
+        if reference_file is not None and reference_file.size > 200 * 1024 * 1024:
+            st.error("Reference file is too large. Please keep files under 200MB.")
+            reference_file = None
     
     with col2:
         st.subheader("📦 Upload Product Export")
@@ -275,8 +286,13 @@ def main():
             "Upload your 'products_export.csv' file",
             type=['csv'],
             key="upload_file",
-            help="This is your product export file that will be updated with new prices"
+            help="This is your product export file that will be updated with new prices (Max 200MB)"
         )
+        
+        # Check file size
+        if upload_file is not None and upload_file.size > 200 * 1024 * 1024:
+            st.error("Product file is too large. Please keep files under 200MB.")
+            upload_file = None
     
     # Market prices section
     st.subheader("💰 Current Market Prices")
